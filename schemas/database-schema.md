@@ -11,8 +11,7 @@ PostgreSQL · SQL: [`schema.sql`](schema.sql)
 │ id PK       │       │ movie_id PK,FK│       │ id PK       │
 │ name UK     │       │ genre_id PK,FK│       │ title       │
 │ slug UK     │       └───────────────┘       │ description │
-└─────────────┘                               │ avg_rating  │
-                                              └──────┬──────┘
+└─────────────┘                               └──────┬──────┘
 ┌─────────────┐       ┌─────────────────┐            │
 │  countries  │ M:N   │ movie_countries │ M:N        │
 ├─────────────┤◄─────►├─────────────────┤◄───────────┤
@@ -173,8 +172,6 @@ PostgreSQL · SQL: [`schema.sql`](schema.sql)
 | poster_url | VARCHAR(500) | |
 | trailer_url | VARCHAR(500) | |
 | age_rating | VARCHAR(10) | |
-| avg_rating | NUMERIC(3,2) | DEFAULT 0, CHECK 0–5 |
-| ratings_count | INTEGER | DEFAULT 0 |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() |
 

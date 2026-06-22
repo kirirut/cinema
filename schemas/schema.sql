@@ -60,17 +60,13 @@ CREATE TABLE movies (
     poster_url          VARCHAR(500),
     trailer_url         VARCHAR(500),
     age_rating          VARCHAR(10),
-    avg_rating          NUMERIC(3, 2) NOT NULL DEFAULT 0,
-    ratings_count       INTEGER        NOT NULL DEFAULT 0,
     created_at          TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
 
     CONSTRAINT movies_release_year_chk
         CHECK (release_year IS NULL OR release_year BETWEEN 1888 AND 2100),
     CONSTRAINT movies_duration_chk
-        CHECK (duration_minutes IS NULL OR duration_minutes > 0),
-    CONSTRAINT movies_avg_rating_chk
-        CHECK (avg_rating >= 0 AND avg_rating <= 5)
+        CHECK (duration_minutes IS NULL OR duration_minutes > 0)
 );
 
 CREATE TABLE movie_genres (
@@ -147,7 +143,6 @@ CREATE INDEX idx_users_username        ON users (username);
 
 CREATE INDEX idx_movies_title          ON movies (title);
 CREATE INDEX idx_movies_release_year   ON movies (release_year);
-CREATE INDEX idx_movies_avg_rating     ON movies (avg_rating DESC);
 
 CREATE INDEX idx_ratings_movie_id      ON ratings (movie_id);
 CREATE INDEX idx_ratings_user_id       ON ratings (user_id);
@@ -162,47 +157,6 @@ CREATE INDEX idx_favorites_movie_id    ON favorites (movie_id);
 CREATE INDEX idx_movie_genres_genre_id ON movie_genres (genre_id);
 CREATE INDEX idx_movie_actors_actor_id ON movie_actors (actor_id);
 CREATE INDEX idx_movie_tags_tag_id     ON movie_tags (tag_id);
-
-CREATE OR REPLACE FUNCTION refresh_movie_avg_rating()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    target_movie_id BIGINT;
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        target_movie_id := OLD.movie_id;
-    ELSE
-        target_movie_id := NEW.movie_id;
-    END IF;
-
-    UPDATE movies m
-    SET avg_rating    = COALESCE(sub.avg, 0),
-        ratings_count = COALESCE(sub.cnt, 0),
-        updated_at    = NOW()
-    FROM (
-        SELECT movie_id,
-               ROUND(AVG(score)::NUMERIC, 2) AS avg,
-               COUNT(*)::INTEGER             AS cnt
-        FROM ratings
-        WHERE movie_id = target_movie_id
-        GROUP BY movie_id
-    ) sub
-    WHERE m.id = target_movie_id;
-
-    IF NOT FOUND AND TG_OP = 'DELETE' THEN
-        UPDATE movies
-        SET avg_rating = 0, ratings_count = 0, updated_at = NOW()
-        WHERE id = target_movie_id;
-    END IF;
-
-    RETURN NULL;
-END;
-$$;
-
-CREATE TRIGGER trg_ratings_refresh_avg
-    AFTER INSERT OR UPDATE OR DELETE ON ratings
-    FOR EACH ROW EXECUTE FUNCTION refresh_movie_avg_rating();
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER
