@@ -57,3 +57,7 @@ logs/
 
 ### Docker local data ###
 docker-compose.override.yml
+
+### Node / frontend ###
+frontend/node_modules/
+frontend/dist/

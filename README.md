@@ -5,6 +5,7 @@
 ## Стек
 
 - Java 17, Spring Boot 3, Maven
+- React 19 + Vite + TypeScript
 - PostgreSQL в Docker
 
 ## Запуск (только Docker, как в CRM)
@@ -18,7 +19,8 @@
    ```bash
    docker compose --profile production up -d --build
    ```
-4. Swagger: http://localhost:8080/swagger-ui.html
+4. **Сайт:** http://localhost:5173
+5. **Swagger:** http://localhost:8080/swagger-ui.html
 
 PostgreSQL работает **только в контейнере** `cinema-postgres`. Локально PostgreSQL ставить не нужно.
 
@@ -30,7 +32,17 @@ PostgreSQL работает **только в контейнере** `cinema-pos
 
 При запуске из IDE поднимается только БД, не контейнер `app` (чтобы не было конфликта порта 8080).
 
-Если порт `5432` занят (например, CRM или служба PostgreSQL в Windows) — останови другой сервис или измени порт в `docker-compose.yml`.
+### Фронтенд (разработка)
+
+1. Запусти бэкенд из IntelliJ (`CinemaApplication`) или Docker `app`.
+2. В каталоге `frontend`:
+   ```bash
+   npm install
+   npm run dev
+   ```
+3. Открой http://localhost:5173 — запросы к API проксируются на `:8080`.
+
+Если порт `5432` занят (например, CRM или служба PostgreSQL в Windows) — cinema использует **5433** (см. `POSTGRES_HOST_PORT` в `.env`). Измени порт при необходимости в `docker-compose.yml`.
 
 ## Секреты — что нельзя пушить в Git
 

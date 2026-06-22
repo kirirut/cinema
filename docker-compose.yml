@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./schemas/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     networks:
       - cinema-net
     healthcheck:
@@ -41,6 +41,21 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - cinema-net
+
+  frontend:
+    profiles:
+      - production
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cinema-frontend
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "5173:80"
     networks:
       - cinema-net
 
