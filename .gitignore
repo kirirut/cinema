@@ -5,10 +5,7 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -36,8 +33,27 @@ build/
 .vscode/
 
 ### Cursor ###
+.cursor/
 .cursorindexingignore
 .specstory/
 
 ### Mac OS ###
 .DS_Store
+
+### Secrets & local env (never commit) ###
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
+secrets.json
+
+### Logs & runtime ###
+*.log
+logs/
+
+### Docker local data ###
+docker-compose.override.yml

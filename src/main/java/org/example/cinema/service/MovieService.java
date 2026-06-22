@@ -1,0 +1,196 @@
+package org.example.cinema.service;
+
+import org.example.cinema.dto.MovieCastRequest;
+import org.example.cinema.dto.MovieDetailResponse;
+import org.example.cinema.dto.MovieRequest;
+import org.example.cinema.dto.MovieSummaryResponse;
+import org.example.cinema.dto.PageResponse;
+import org.example.cinema.entity.Movie;
+import org.example.cinema.entity.MovieActor;
+import org.example.cinema.exception.ResourceNotFoundException;
+import org.example.cinema.mapper.EntityMapper;
+import org.example.cinema.repository.MovieRepository;
+import org.example.cinema.repository.MovieSpecifications;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Service
+public class MovieService {
+
+    private final MovieRepository movieRepository;
+    private final GenreService genreService;
+    private final CountryService countryService;
+    private final DirectorService directorService;
+    private final TagService tagService;
+    private final ActorService actorService;
+
+    public MovieService(
+            MovieRepository movieRepository,
+            GenreService genreService,
+            CountryService countryService,
+            DirectorService directorService,
+            TagService tagService,
+            ActorService actorService
+    ) {
+        this.movieRepository = movieRepository;
+        this.genreService = genreService;
+        this.countryService = countryService;
+        this.directorService = directorService;
+        this.tagService = tagService;
+        this.actorService = actorService;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> search(
+            String q,
+            Long genreId,
+            Long countryId,
+            Long tagId,
+            Long directorId,
+            Long actorId,
+            Short yearFrom,
+            Short yearTo,
+            Pageable pageable
+    ) {
+        Specification<Movie> spec = Specification.where(MovieSpecifications.titleContains(q))
+                .and(MovieSpecifications.hasGenreId(genreId))
+                .and(MovieSpecifications.hasCountryId(countryId))
+                .and(MovieSpecifications.hasTagId(tagId))
+                .and(MovieSpecifications.hasDirectorId(directorId))
+                .and(MovieSpecifications.hasActorId(actorId))
+                .and(MovieSpecifications.releaseYearFrom(yearFrom))
+                .and(MovieSpecifications.releaseYearTo(yearTo));
+
+        return PageResponse.from(movieRepository.findAll(spec, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    @Cacheable(value = "movie", key = "#id")
+    @Transactional(readOnly = true)
+    public MovieDetailResponse findById(Long id) {
+        return EntityMapper.toMovieDetailResponse(getMovieWithDetails(id));
+    }
+
+    @Transactional
+    @CacheEvict(value = {"movies", "movie"}, allEntries = true)
+    public MovieDetailResponse create(MovieRequest request) {
+        Movie movie = mapRequest(new Movie(), request);
+        Movie saved = movieRepository.save(movie);
+        return EntityMapper.toMovieDetailResponse(getMovieWithDetails(saved.getId()));
+    }
+
+    @Transactional
+    @CacheEvict(value = {"movies", "movie"}, allEntries = true)
+    public MovieDetailResponse update(Long id, MovieRequest request) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));
+        mapRequest(movie, request);
+        movieRepository.save(movie);
+        return EntityMapper.toMovieDetailResponse(getMovieWithDetails(id));
+    }
+
+    @Transactional
+    @CacheEvict(value = {"movies", "movie"}, allEntries = true)
+    public void delete(Long id) {
+        if (!movieRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Movie not found: " + id);
+        }
+        movieRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> findByGenreId(Long genreId, Pageable pageable) {
+        genreService.findById(genreId);
+        return PageResponse.from(movieRepository.findByGenreId(genreId, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> findByCountryId(Long countryId, Pageable pageable) {
+        countryService.findById(countryId);
+        return PageResponse.from(movieRepository.findByCountryId(countryId, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> findByTagId(Long tagId, Pageable pageable) {
+        tagService.findById(tagId);
+        return PageResponse.from(movieRepository.findByTagId(tagId, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> findByDirectorId(Long directorId, Pageable pageable) {
+        directorService.findById(directorId);
+        return PageResponse.from(movieRepository.findByDirectorId(directorId, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> findByActorId(Long actorId, Pageable pageable) {
+        actorService.findById(actorId);
+        return PageResponse.from(movieRepository.findByActorId(actorId, pageable).map(EntityMapper::toMovieSummaryResponse));
+    }
+
+    public Movie getEntity(Long id) {
+        return movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));
+    }
+
+    private Movie getMovieWithDetails(Long id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));
+        movie.getGenres().size();
+        movie.getCountries().size();
+        movie.getDirectors().size();
+        movie.getTags().size();
+        movie.getCast().forEach(castMember -> castMember.getActor().getFullName());
+        return movie;
+    }
+
+    private Movie mapRequest(Movie movie, MovieRequest request) {
+        movie.setTitle(request.title());
+        movie.setOriginalTitle(request.originalTitle());
+        movie.setDescription(request.description());
+        movie.setReleaseYear(request.releaseYear());
+        movie.setDurationMinutes(request.durationMinutes());
+        movie.setPosterUrl(request.posterUrl());
+        movie.setTrailerUrl(request.trailerUrl());
+        movie.setAgeRating(request.ageRating());
+        movie.setGenres(resolveIds(request.genreIds(), genreService::getEntity));
+        movie.setCountries(resolveIds(request.countryIds(), countryService::getEntity));
+        movie.setDirectors(resolveIds(request.directorIds(), directorService::getEntity));
+        movie.setTags(resolveIds(request.tagIds(), tagService::getEntity));
+        updateCast(movie, request.cast());
+        return movie;
+    }
+
+    private <T> Set<T> resolveIds(Set<Long> ids, java.util.function.Function<Long, T> loader) {
+        if (ids == null || ids.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<T> result = new HashSet<>();
+        for (Long id : ids) {
+            result.add(loader.apply(id));
+        }
+        return result;
+    }
+
+    private void updateCast(Movie movie, List<MovieCastRequest> castRequests) {
+        movie.getCast().clear();
+        if (castRequests == null || castRequests.isEmpty()) {
+            return;
+        }
+        for (MovieCastRequest castRequest : castRequests) {
+            MovieActor movieActor = new MovieActor();
+            movieActor.setMovie(movie);
+            movieActor.setActor(actorService.getEntity(castRequest.actorId()));
+            movieActor.setRoleName(castRequest.roleName());
+            movie.getCast().add(movieActor);
+        }
+    }
+}
