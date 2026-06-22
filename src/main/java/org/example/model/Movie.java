@@ -1,6 +1,5 @@
 package org.example.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Movie {
@@ -14,8 +13,6 @@ public class Movie {
     private String posterUrl;
     private String trailerUrl;
     private String ageRating;
-    private BigDecimal avgRating;
-    private Integer ratingsCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -91,22 +88,6 @@ public class Movie {
         this.ageRating = ageRating;
     }
 
-    public BigDecimal getAvgRating() {
-        return avgRating;
-    }
-
-    public void setAvgRating(BigDecimal avgRating) {
-        this.avgRating = avgRating;
-    }
-
-    public Integer getRatingsCount() {
-        return ratingsCount;
-    }
-
-    public void setRatingsCount(Integer ratingsCount) {
-        this.ratingsCount = ratingsCount;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -125,8 +106,8 @@ public class Movie {
 
     @Override
     public String toString() {
-        return "Movie{id=%d, title='%s', year=%s, duration=%s min, rating=%s (%d)}".formatted(
-                id, title, releaseYear, durationMinutes, avgRating, ratingsCount
+        return "Movie{id=%d, title='%s', year=%s, duration=%s min}".formatted(
+                id, title, releaseYear, durationMinutes
         );
     }
 }

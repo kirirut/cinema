@@ -25,7 +25,7 @@ public class MovieDao {
 
     private static final String SELECT_ALL = """
             SELECT id, title, original_title, description, release_year, duration_minutes,
-                   poster_url, trailer_url, age_rating, avg_rating, ratings_count, created_at, updated_at
+                   poster_url, trailer_url, age_rating, created_at, updated_at
             FROM movies
             ORDER BY id
             """;
@@ -129,8 +129,6 @@ public class MovieDao {
         movie.setPosterUrl(resultSet.getString("poster_url"));
         movie.setTrailerUrl(resultSet.getString("trailer_url"));
         movie.setAgeRating(resultSet.getString("age_rating"));
-        movie.setAvgRating(resultSet.getBigDecimal("avg_rating"));
-        movie.setRatingsCount(resultSet.getInt("ratings_count"));
         Timestamp createdAt = resultSet.getTimestamp("created_at");
         if (createdAt != null) {
             movie.setCreatedAt(createdAt.toLocalDateTime());
