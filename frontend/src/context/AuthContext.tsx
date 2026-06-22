@@ -51,6 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
+  useEffect(() => {
+    function onUnauthorized() {
+      setUser(null);
+    }
+    window.addEventListener('cinema:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('cinema:unauthorized', onUnauthorized);
+  }, []);
+
   const login = useCallback(async (data: LoginRequest) => {
     const response = await authApi.login(data);
     setToken(response.token);

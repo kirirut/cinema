@@ -12,9 +12,12 @@ import {
 } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { PosterWithFallback } from '../components/Poster';
-import { StarRating, formatRating } from '../components/StarRating';
+import { StarRating, formatRating, ratingLabel } from '../components/StarRating';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
+import { Breadcrumbs } from '../components/Breadcrumbs';
+import { Toast } from '../components/Toast';
+import { formatDuration } from '../utils/filters';
 
 export function MoviePage() {
   const { id } = useParams<{ id: string }>();
@@ -28,11 +31,13 @@ export function MoviePage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewBody, setReviewBody] = useState('');
   const [reviewError, setReviewError] = useState('');
-  const [actionMsg, setActionMsg] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; variant: 'success' | 'error' } | null>(null);
 
   const load = useCallback(async () => {
     if (!movieId || Number.isNaN(movieId)) return;
@@ -53,9 +58,12 @@ export function MoviePage() {
         ]);
         setMyRating(rating);
         setIsFavorite(favs.some((f) => f.movieId === movieId));
+      } else {
+        setMyRating(null);
+        setIsFavorite(false);
       }
     } catch {
-      setError('Фильм не найден');
+      setError('Фильм не найден или сервер недоступен');
     } finally {
       setLoading(false);
     }
@@ -64,6 +72,20 @@ export function MoviePage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const myReview = reviews.find((r) => r.userId === user?.id);
+
+  useEffect(() => {
+    if (myReview) {
+      setReviewTitle(myReview.title ?? '');
+      setReviewBody(myReview.body);
+    }
+  }, [myReview]);
+
+  function showToast(msg: string, variant: 'success' | 'error' = 'success') {
+    setToast({ msg, variant });
+    setTimeout(() => setToast(null), 3500);
+  }
 
   async function handleRate(score: number) {
     if (!isAuthenticated) {
@@ -75,9 +97,9 @@ export function MoviePage() {
       setMyRating(rating);
       const updated = await moviesApi.getById(movieId);
       setMovie(updated);
-      flash('Оценка сохранена');
+      showToast('Оценка сохранена');
     } catch (err) {
-      flash(err instanceof ApiError ? err.detail : 'Ошибка', true);
+      showToast(err instanceof ApiError ? err.detail : 'Не удалось сохранить оценку', 'error');
     }
   }
 
@@ -86,18 +108,21 @@ export function MoviePage() {
       navigate('/login', { state: { from: `/movie/${movieId}` } });
       return;
     }
+    setFavoriteLoading(true);
     try {
       if (isFavorite) {
         await favoritesApi.remove(movieId);
         setIsFavorite(false);
-        flash('Удалено из избранного');
+        showToast('Удалено из избранного');
       } else {
         await favoritesApi.add(movieId);
         setIsFavorite(true);
-        flash('Добавлено в избранное');
+        showToast('Добавлено в избранное');
       }
     } catch (err) {
-      flash(err instanceof ApiError ? err.detail : 'Ошибка', true);
+      showToast(err instanceof ApiError ? err.detail : 'Ошибка', 'error');
+    } finally {
+      setFavoriteLoading(false);
     }
   }
 
@@ -108,103 +133,154 @@ export function MoviePage() {
       return;
     }
     setReviewError('');
+    setReviewSubmitting(true);
     try {
-      const existing = reviews.find((r) => r.userId === user?.id);
-      if (existing) {
-        const updated = await reviewsApi.update(existing.id, reviewTitle, reviewBody);
+      if (myReview) {
+        const updated = await reviewsApi.update(myReview.id, reviewTitle, reviewBody);
         setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        showToast('Отзыв обновлён');
       } else {
         const created = await reviewsApi.create(movieId, reviewTitle, reviewBody);
         setReviews((prev) => [created, ...prev]);
+        setReviewTitle('');
+        setReviewBody('');
+        showToast('Отзыв опубликован');
       }
-      setReviewTitle('');
-      setReviewBody('');
-      flash('Отзыв сохранён');
     } catch (err) {
       setReviewError(err instanceof ApiError ? err.detail : 'Ошибка сохранения');
+    } finally {
+      setReviewSubmitting(false);
     }
   }
 
   async function deleteReview(reviewId: number) {
+    if (!window.confirm('Удалить ваш отзыв?')) return;
     try {
       await reviewsApi.remove(reviewId);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-      flash('Отзыв удалён');
+      setReviewTitle('');
+      setReviewBody('');
+      showToast('Отзыв удалён');
     } catch (err) {
-      flash(err instanceof ApiError ? err.detail : 'Ошибка', true);
+      showToast(err instanceof ApiError ? err.detail : 'Ошибка', 'error');
     }
   }
 
-  function flash(msg: string, isError = false) {
-    setActionMsg(msg);
-    setTimeout(() => setActionMsg(''), 3000);
-    if (isError) console.error(msg);
-  }
+  if (loading) return <LoadingSpinner fullPage />;
+  if (error || !movie) return <ErrorMessage message={error || 'Не найдено'} onRetry={load} />;
 
-  const myReview = reviews.find((r) => r.userId === user?.id);
-
-  useEffect(() => {
-    if (myReview) {
-      setReviewTitle(myReview.title ?? '');
-      setReviewBody(myReview.body);
-    }
-  }, [myReview]);
-
-  if (loading) return <LoadingSpinner />;
-  if (error || !movie) return <ErrorMessage message={error || 'Не найдено'} />;
+  const duration = formatDuration(movie.durationMinutes);
 
   return (
     <div className="page movie-detail">
-      {actionMsg && <div className="toast">{actionMsg}</div>}
+      {toast && (
+        <Toast
+          message={toast.msg}
+          variant={toast.variant}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {movie.posterUrl && (
+        <div
+          className="movie-detail__backdrop"
+          style={{ backgroundImage: `url(${movie.posterUrl})` }}
+          aria-hidden
+        />
+      )}
+
+      <Breadcrumbs
+        items={[
+          { label: 'Главная', to: '/' },
+          ...(movie.genres[0]
+            ? [{ label: movie.genres[0].name, to: `/?genreId=${movie.genres[0].id}` }]
+            : []),
+          { label: movie.title },
+        ]}
+      />
 
       <div className="movie-detail__hero">
-        <PosterWithFallback url={movie.posterUrl} title={movie.title} size="lg" />
+        <div className="movie-detail__poster-wrap">
+          <PosterWithFallback url={movie.posterUrl} title={movie.title} size="lg" />
+        </div>
         <div className="movie-detail__info">
           <h1>{movie.title}</h1>
           {movie.originalTitle && movie.originalTitle !== movie.title && (
             <p className="movie-detail__original">{movie.originalTitle}</p>
           )}
 
-          <div className="movie-detail__stats">
-            {movie.releaseYear && <span>{movie.releaseYear} г.</span>}
-            {movie.durationMinutes && <span>{movie.durationMinutes} мин.</span>}
-            {movie.ageRating && <span className="badge badge--age">{movie.ageRating}</span>}
-            <span className="movie-detail__rating">
-              ★ {formatRating(movie.averageRating)}
-              {movie.ratingsCount != null && movie.ratingsCount > 0 && (
-                <small> ({movie.ratingsCount})</small>
-              )}
-            </span>
+          <div className="movie-detail__rating-block">
+            <div className="movie-detail__score">
+              <span className="movie-detail__score-value">
+                {formatRating(movie.averageRating)}
+              </span>
+              <StarRating value={movie.averageRating ?? 0} size="sm" />
+              <span className="movie-detail__score-label">
+                {ratingLabel(movie.averageRating, movie.ratingsCount)}
+              </span>
+            </div>
           </div>
 
+          <dl className="meta-grid">
+            {movie.releaseYear && (
+              <>
+                <dt>Год</dt>
+                <dd>{movie.releaseYear}</dd>
+              </>
+            )}
+            {duration && (
+              <>
+                <dt>Длительность</dt>
+                <dd>{duration}</dd>
+              </>
+            )}
+            {movie.ageRating && (
+              <>
+                <dt>Возраст</dt>
+                <dd><span className="badge badge--age">{movie.ageRating}</span></dd>
+              </>
+            )}
+            {movie.countries.length > 0 && (
+              <>
+                <dt>Страна</dt>
+                <dd className="meta-grid__links">
+                  {movie.countries.map((c, i) => (
+                    <span key={c.id}>
+                      {i > 0 && ', '}
+                      <Link to={`/?countryId=${c.id}`} className="meta-grid__link">
+                        {c.name}
+                      </Link>
+                    </span>
+                  ))}
+                </dd>
+              </>
+            )}
+            {movie.directors.length > 0 && (
+              <>
+                <dt>Режиссёр</dt>
+                <dd>{movie.directors.map((d) => d.fullName).join(', ')}</dd>
+              </>
+            )}
+          </dl>
+
           {movie.genres.length > 0 && (
-            <p className="movie-detail__tags">
+            <div className="movie-detail__tags">
               {movie.genres.map((g) => (
                 <Link key={g.id} to={`/?genreId=${g.id}`} className="chip">
                   {g.name}
                 </Link>
               ))}
-            </p>
+            </div>
           )}
 
-          {movie.countries.length > 0 && (
-            <p className="movie-detail__meta-line">
-              <strong>Страна:</strong> {movie.countries.map((c) => c.name).join(', ')}
-            </p>
-          )}
-
-          {movie.directors.length > 0 && (
-            <p className="movie-detail__meta-line">
-              <strong>Режиссёр:</strong> {movie.directors.map((d) => d.name).join(', ')}
-            </p>
-          )}
-
-          {movie.cast.length > 0 && (
-            <p className="movie-detail__meta-line">
-              <strong>В ролях:</strong>{' '}
-              {movie.cast.slice(0, 8).map((c) => c.actorName).join(', ')}
-              {movie.cast.length > 8 && '…'}
-            </p>
+          {movie.tags.length > 0 && (
+            <div className="movie-detail__tags movie-detail__tags--secondary">
+              {movie.tags.map((t) => (
+                <Link key={t.id} to={`/?tagId=${t.id}`} className="chip chip--outline">
+                  {t.name}
+                </Link>
+              ))}
+            </div>
           )}
 
           <div className="movie-detail__actions">
@@ -212,8 +288,10 @@ export function MoviePage() {
               type="button"
               className={`btn ${isFavorite ? 'btn--ghost' : 'btn--accent'}`}
               onClick={toggleFavorite}
+              disabled={favoriteLoading}
+              aria-pressed={isFavorite}
             >
-              {isFavorite ? '★ В избранном' : '☆ В избранное'}
+              {favoriteLoading ? '…' : isFavorite ? '★ В избранном' : '☆ В избранное'}
             </button>
             {movie.trailerUrl && (
               <a
@@ -222,18 +300,24 @@ export function MoviePage() {
                 rel="noopener noreferrer"
                 className="btn btn--ghost"
               >
-                Трейлер ↗
+                ▶ Трейлер
               </a>
             )}
           </div>
 
           <div className="movie-detail__rate">
-            <span>Ваша оценка:</span>
+            <span className="movie-detail__rate-label">Ваша оценка</span>
             <StarRating
               value={myRating?.score ?? 0}
               interactive
               onChange={handleRate}
+              showValue
             />
+            {!isAuthenticated && (
+              <Link to="/login" state={{ from: `/movie/${movieId}` }} className="movie-detail__rate-hint">
+                Войдите, чтобы оценить
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -245,8 +329,22 @@ export function MoviePage() {
         </section>
       )}
 
+      {movie.cast.length > 0 && (
+        <section className="movie-detail__section">
+          <h2>В ролях</h2>
+          <ul className="cast-list">
+            {movie.cast.map((c) => (
+              <li key={c.actorId} className="cast-list__item">
+                <span className="cast-list__actor">{c.actorName}</span>
+                {c.roleName && <span className="cast-list__role">{c.roleName}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="movie-detail__section">
-        <h2>Отзывы ({reviews.length})</h2>
+        <h2>Отзывы <span className="section-count">{reviews.length}</span></h2>
 
         {isAuthenticated ? (
           <form className="review-form" onSubmit={handleReviewSubmit}>
@@ -257,7 +355,8 @@ export function MoviePage() {
                 type="text"
                 value={reviewTitle}
                 onChange={(e) => setReviewTitle(e.target.value)}
-                placeholder="Необязательно"
+                placeholder="Кратко о впечатлении"
+                maxLength={200}
               />
             </label>
             <label className="form-field">
@@ -267,39 +366,56 @@ export function MoviePage() {
                 rows={4}
                 value={reviewBody}
                 onChange={(e) => setReviewBody(e.target.value)}
+                placeholder="Поделитесь мнением о фильме…"
               />
             </label>
-            <button type="submit" className="btn btn--accent">
-              {myReview ? 'Обновить отзыв' : 'Оставить отзыв'}
-            </button>
-          </form>
-        ) : (
-          <p className="hint">
-            <Link to="/login" state={{ from: `/movie/${movieId}` }}>Войдите</Link>, чтобы оставить отзыв
-          </p>
-        )}
-
-        <div className="reviews-list">
-          {reviews.length === 0 && <p className="hint">Пока нет отзывов</p>}
-          {reviews.map((review) => (
-            <article key={review.id} className="review-card">
-              <header className="review-card__header">
-                <strong>{review.username}</strong>
-                <time dateTime={review.createdAt}>
-                  {new Date(review.createdAt).toLocaleDateString('ru-RU')}
-                </time>
-              </header>
-              {review.title && <h3 className="review-card__title">{review.title}</h3>}
-              <p>{review.body}</p>
-              {user?.id === review.userId && (
+            <div className="review-form__actions">
+              <button type="submit" className="btn btn--accent" disabled={reviewSubmitting}>
+                {reviewSubmitting ? 'Сохранение…' : myReview ? 'Обновить отзыв' : 'Опубликовать'}
+              </button>
+              {myReview && (
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
-                  onClick={() => deleteReview(review.id)}
+                  className="btn btn--ghost"
+                  onClick={() => deleteReview(myReview.id)}
                 >
                   Удалить
                 </button>
               )}
+            </div>
+          </form>
+        ) : (
+          <div className="auth-prompt">
+            <Link to="/login" state={{ from: `/movie/${movieId}` }} className="btn btn--accent btn--sm">
+              Войти
+            </Link>
+            <span>чтобы оставить отзыв и оценку</span>
+          </div>
+        )}
+
+        <div className="reviews-list">
+          {reviews.length === 0 && (
+            <p className="empty-inline">Пока нет отзывов — будьте первым!</p>
+          )}
+          {reviews.map((review) => (
+            <article key={review.id} className="review-card">
+              <header className="review-card__header">
+                <div className="review-card__author">
+                  <span className="review-card__avatar" aria-hidden>
+                    {review.username.charAt(0).toUpperCase()}
+                  </span>
+                  <strong>{review.username}</strong>
+                </div>
+                <time dateTime={review.createdAt}>
+                  {new Date(review.createdAt).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </time>
+              </header>
+              {review.title && <h3 className="review-card__title">{review.title}</h3>}
+              <p className="review-card__body">{review.body}</p>
             </article>
           ))}
         </div>

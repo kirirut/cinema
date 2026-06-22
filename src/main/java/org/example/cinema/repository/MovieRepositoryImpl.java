@@ -21,7 +21,7 @@ public class MovieRepositoryImpl implements MovieRepositoryCustom {
     @Override
     public List<Movie> findRecommended(List<Long> genreIds, List<Long> excludeMovieIds, int limit) {
         StringBuilder jpql = new StringBuilder("""
-                SELECT DISTINCT m.id FROM Movie m
+                SELECT m.id FROM Movie m
                 JOIN m.genres g
                 WHERE g.id IN :genreIds
                 """);
@@ -29,6 +29,7 @@ public class MovieRepositoryImpl implements MovieRepositoryCustom {
             jpql.append(" AND m.id NOT IN :excludeMovieIds ");
         }
         jpql.append("""
+                GROUP BY m.id
                 ORDER BY (
                     SELECT COALESCE(AVG(r.score), 0.0) FROM Rating r WHERE r.movie = m
                 ) DESC, m.id

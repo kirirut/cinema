@@ -3,6 +3,7 @@ import { usersApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -41,6 +42,7 @@ export function ProfilePage() {
 
   return (
     <div className="page">
+      <Breadcrumbs items={[{ label: 'Главная', to: '/' }, { label: 'Профиль' }]} />
       <h1>Профиль</h1>
 
       <div className="profile-card">

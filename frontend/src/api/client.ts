@@ -58,6 +58,10 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && auth) {
+      setToken(null);
+      window.dispatchEvent(new Event('cinema:unauthorized'));
+    }
     const detail =
       typeof data === 'object' && data !== null && 'detail' in data
         ? String((data as { detail: unknown }).detail)

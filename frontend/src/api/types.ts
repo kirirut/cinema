@@ -41,9 +41,10 @@ export interface MovieSummary {
 
 export interface Director {
   id: number;
-  name: string;
+  fullName: string;
   birthDate: string | null;
-  biography: string | null;
+  bio: string | null;
+  photoUrl: string | null;
 }
 
 export interface MovieCast {

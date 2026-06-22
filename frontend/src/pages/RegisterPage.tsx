@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api';
+import { PasswordInput } from '../components/PasswordInput';
 
 export function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
@@ -74,13 +75,12 @@ export function RegisterPage() {
 
           <label className="form-field">
             <span>Пароль * (мин. 6 символов)</span>
-            <input
-              type="password"
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
               autoComplete="new-password"
               required
               minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
             />
           </label>
 

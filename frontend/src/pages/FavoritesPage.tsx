@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { favoritesApi, type Favorite } from '../api';
 import { MovieListItem } from '../components/MovieListItem';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { MovieListSkeleton } from '../components/MovieListSkeleton';
 import { ErrorMessage } from '../components/ErrorMessage';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function FavoritesPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -28,21 +30,31 @@ export function FavoritesPage() {
 
   return (
     <div className="page">
-      <h1>Избранное</h1>
+      <Breadcrumbs items={[{ label: 'Главная', to: '/' }, { label: 'Избранное' }]} />
+      <div className="page-header">
+        <h1>Избранное</h1>
+        {!loading && favorites.length > 0 && (
+          <span className="page-header__count">{favorites.length} фильмов</span>
+        )}
+      </div>
 
-      {loading && <LoadingSpinner />}
+      {loading && <MovieListSkeleton count={4} />}
       {error && <ErrorMessage message={error} onRetry={load} />}
 
       {!loading && !error && (
         favorites.length === 0 ? (
           <div className="empty-state">
-            <p>Список избранного пуст</p>
-            <p className="empty-state__hint">Добавляйте фильмы со страницы просмотра</p>
+            <div className="empty-state__icon" aria-hidden>☆</div>
+            <p className="empty-state__title">Список избранного пуст</p>
+            <p className="empty-state__hint">
+              Нажмите «В избранное» на странице любого фильма
+            </p>
+            <Link to="/" className="btn btn--accent">Перейти в каталог</Link>
           </div>
         ) : (
           <div className="movie-list">
-            {favorites.map((f) => (
-              <MovieListItem key={f.movieId} movie={f.movie} />
+            {favorites.map((f, i) => (
+              <MovieListItem key={f.movieId} movie={f.movie} index={i} />
             ))}
           </div>
         )
