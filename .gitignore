@@ -39,5 +39,9 @@ build/
 .cursorindexingignore
 .specstory/
 
+### Secrets ###
+src/main/resources/application-secrets.properties
+src/main/resources/application-local.properties
+
 ### Mac OS ###
 .DS_Store

@@ -12,18 +12,19 @@ import java.util.Properties;
 public final class DatabaseConfig {
 
     private static final String PROPERTIES_FILE = "application.properties";
+    private static final String SECRETS_FILE = "application-secrets.properties";
     private static final Properties PROPERTIES = loadProperties();
 
     private DatabaseConfig() {
     }
 
     public static Connection getConnection() {
+        String url = requireProperty("db.url", "DB_URL");
+        String username = requireProperty("db.username", "DB_USERNAME");
+        String password = requireProperty("db.password", "DB_PASSWORD");
+
         try {
-            return DriverManager.getConnection(
-                    PROPERTIES.getProperty("db.url"),
-                    PROPERTIES.getProperty("db.username"),
-                    PROPERTIES.getProperty("db.password")
-            );
+            return DriverManager.getConnection(url, username, password);
         } catch (SQLException e) {
             throw new DataAccessException(
                     "Не удалось подключиться к базе данных: " + e.getMessage(), e);
@@ -33,7 +34,7 @@ public final class DatabaseConfig {
     private static Properties loadProperties() {
         Properties properties = new Properties();
         loadFile(properties, PROPERTIES_FILE);
-        loadFile(properties, "application-local.properties");
+        loadFile(properties, SECRETS_FILE);
         return properties;
     }
 
@@ -49,5 +50,29 @@ public final class DatabaseConfig {
         } catch (IOException e) {
             throw new DataAccessException("Не удалось загрузить " + fileName, e);
         }
+    }
+
+    private static String requireProperty(String propertyKey, String envKey) {
+        String envValue = System.getenv(envKey);
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue.trim();
+        }
+
+        String systemValue = System.getProperty(propertyKey);
+        if (systemValue != null && !systemValue.isBlank()) {
+            return systemValue.trim();
+        }
+
+        String fileValue = PROPERTIES.getProperty(propertyKey);
+        if (fileValue != null && !fileValue.isBlank()) {
+            return fileValue.trim();
+        }
+
+        throw new DataAccessException(
+                "Не задан параметр " + propertyKey + ". "
+                        + "Укажите переменную окружения " + envKey
+                        + " или добавьте значение в " + SECRETS_FILE,
+                null
+        );
     }
 }
