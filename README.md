@@ -13,22 +13,8 @@
 
 [Открыть проект в SonarCloud](https://sonarcloud.io/project/overview?id=kirirut_cinema)
 
-## База данных
+## План-факт
 
-Схема: `schemas/schema.sql`
-
-```bash
-psql -U postgres -c "CREATE DATABASE cinema ENCODING 'UTF8';"
-psql -U postgres -d cinema -f schemas/schema.sql
-```
-
-## Анализ SonarCloud
-
-Локально (токен — через переменную окружения, не хранить в репозитории):
-
-```bash
-set SONAR_TOKEN=your_token_here
-mvn clean verify sonar:sonar
-```
-
-В CI токен задаётся в GitHub: **Settings → Secrets and variables → Actions → SONAR_TOKEN**.
+| Задача | План (ч) | Факт (ч) |
+|--------|----------|----------|
+| Проектирование и создание схемы БД, настройка SonarCloud | 8 | 6 |
