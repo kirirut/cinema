@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: cinema
+  config:
+    import: optional:file:.env[.properties]
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start-only
+      file: docker-compose.yml
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10m
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000
+  rate-limit:
+    requests-per-minute: 60
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:4200
+      - http://localhost:5173
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    org.hibernate.SQL: warn

@@ -1,0 +1,11 @@
+target/
+.git
+.idea
+frontend/
+angular-app/node_modules
+angular-app/dist
+angular-app/.angular
+scripts/
+schemas/
+*.md
+.env

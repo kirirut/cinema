@@ -47,3 +47,10 @@ angular-app/node_modules/
 angular-app/dist/
 frontend/node_modules/
 frontend/dist/
+scripts/node_modules/
+
+### Secrets & local env ###
+.env
+.env.local
+.env.*.local
+docker-compose.override.yml

@@ -60,6 +60,12 @@ async function main() {
   await client.connect();
 
   try {
+    const { rows: existing } = await client.query('SELECT COUNT(*)::int AS count FROM movies');
+    if (existing[0].count > 0 && env.SEED_FORCE !== '1') {
+      console.log(`В БД уже ${existing[0].count} фильм(ов) — seed пропущен. SEED_FORCE=1 для повторного заполнения.`);
+      return;
+    }
+
     const { rows: genres } = await client.query('SELECT id FROM genres ORDER BY id');
     const { rows: countries } = await client.query('SELECT id FROM countries ORDER BY id');
     const { rows: tags } = await client.query('SELECT id FROM tags ORDER BY id');

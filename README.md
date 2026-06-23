@@ -4,12 +4,55 @@
 
 ## Стек
 
-- Java 17, Maven
+- Java 17, Spring Boot 3, Maven
 - PostgreSQL
-- **React** — `frontend/` (ветка `react`)
 - **Angular 19** — `angular-app/` (ветка `angular`)
+- **React** — `frontend/` (ветка `react`)
 
-### Angular-фронтенд
+## Запуск одной командой (Docker)
+
+1. Создай файл секретов (один раз):
+
+```bash
+copy .env.example .env
+```
+
+Задай в `.env` пароль БД и `JWT_SECRET` (минимум 32 символа).
+
+2. Подними весь проект:
+
+```bash
+docker compose up -d --build
+```
+
+Docker поднимет:
+- **PostgreSQL** — порт `5433` (или `POSTGRES_HOST_PORT`)
+- **seed** — заполнит БД фильмами, актёрами и режиссёрами (faker)
+- **Spring Boot API** — http://localhost:8080
+- **Angular** — http://localhost:4200
+
+3. Swagger: http://localhost:8080/swagger-ui.html
+
+Повторный seed при уже заполненной БД пропускается. Чтобы добавить данные снова:
+
+```bash
+docker compose run --rm -e SEED_FORCE=1 seed
+```
+
+Остановить:
+
+```bash
+docker compose down
+```
+
+Полный сброс БД:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+## Angular-фронтенд (разработка)
 
 ```bash
 cd angular-app
@@ -18,18 +61,6 @@ npm start
 ```
 
 → http://localhost:4200 (прокси API на `:8080`)
-
-### Тестовые данные (faker)
-
-При запущенном PostgreSQL (контейнер `cinema-postgres` или локально) и файле `.env` в корне проекта:
-
-```bash
-cd scripts
-npm install
-npm run seed
-```
-
-Скрипт добавляет режиссёров, актёров и ~40 фильмов со случайными данными. Параметры: `SEED_MOVIES`, `SEED_DIRECTORS`, `SEED_ACTORS`, `POSTGRES_HOST_PORT`.
 
 ## SonarCloud
 
