@@ -200,9 +200,7 @@ export function MoviePage() {
       />
 
       <div className="movie-detail__hero">
-        <div className="movie-detail__poster-wrap">
-          <PosterWithFallback url={movie.posterUrl} title={movie.title} size="lg" />
-        </div>
+        <PosterWithFallback url={movie.posterUrl} title={movie.title} size="lg" featured />
         <div className="movie-detail__info">
           <h1>{movie.title}</h1>
           {movie.originalTitle && movie.originalTitle !== movie.title && (

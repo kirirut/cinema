@@ -1,7 +1,10 @@
+import { useState } from 'react';
+
 interface PosterProps {
   url: string | null | undefined;
   title: string;
   size?: 'sm' | 'md' | 'lg';
+  featured?: boolean;
 }
 
 export function Poster({ url, title, size = 'md' }: PosterProps) {
@@ -27,31 +30,33 @@ export function Poster({ url, title, size = 'md' }: PosterProps) {
   );
 }
 
-export function PosterWithFallback({ url, title, size = 'md' }: PosterProps) {
+export function PosterWithFallback({ url, title, size = 'md', featured = false }: PosterProps) {
+  const [failed, setFailed] = useState(false);
+  const letter = title.charAt(0).toUpperCase();
+  const showFallback = !url || failed;
+
+  const wrapClass = [
+    'poster-wrap',
+    `poster-wrap--${size}`,
+    featured ? 'poster-wrap--featured' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className="poster-wrap">
-      {url ? (
-        <>
-          <img
-            src={url}
-            alt={title}
-            className={`poster poster--${size}`}
-            loading="lazy"
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              img.style.display = 'none';
-              const fb = img.parentElement?.querySelector('.poster-fallback');
-              fb?.classList.remove('poster-fallback--hidden');
-            }}
-          />
-          <div className={`poster-fallback poster-fallback--${size} poster-fallback--hidden`} aria-hidden>
-            <span>{title.charAt(0).toUpperCase()}</span>
-          </div>
-        </>
-      ) : (
+    <div className={wrapClass}>
+      {showFallback ? (
         <div className={`poster-fallback poster-fallback--${size}`} aria-hidden>
-          <span>{title.charAt(0).toUpperCase()}</span>
+          <span>{letter}</span>
         </div>
+      ) : (
+        <img
+          src={url}
+          alt={title}
+          className={`poster poster--${size}`}
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
       )}
     </div>
   );

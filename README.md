@@ -8,7 +8,7 @@
 - React 19 + Vite + TypeScript
 - PostgreSQL в Docker
 
-## Запуск (только Docker, как в CRM)
+## Запуск (только Docker)
 
 1. Создай файл секретов (один раз):
    ```bash
@@ -44,6 +44,18 @@ PostgreSQL работает **только в контейнере** `cinema-pos
 
 Если порт `5432` занят (например, CRM или служба PostgreSQL в Windows) — cinema использует **5433** (см. `POSTGRES_HOST_PORT` в `.env`). Измени порт при необходимости в `docker-compose.yml`.
 
+### Тестовые данные (faker)
+
+При запущенном PostgreSQL (контейнер `cinema-postgres` или локально):
+
+```bash
+cd scripts
+npm install
+npm run seed
+```
+
+Скрипт добавляет режиссёров, актёров и ~40 фильмов со случайными данными напрямую в PostgreSQL (нужен запущенный контейнер `cinema-postgres`). Параметры: `SEED_MOVIES`, `SEED_DIRECTORS`, `SEED_ACTORS`, `POSTGRES_HOST_PORT`.
+
 ## Секреты — что нельзя пушить в Git
 
 | Файл / данные | Почему |
@@ -71,3 +83,5 @@ PostgreSQL работает **только в контейнере** `cinema-pos
 | Задача | План (ч) | Факт (ч) |
 |--------|----------|----------|
 | Проектирование и создание схемы БД, настройка SonarCloud | 8 | 6 |
+| Бэкенд (Spring Boot, REST API, Docker) | 12 | 8 |
+| Фронтенд React (Vite, UI/UX, страницы) | 16 | 14 |
