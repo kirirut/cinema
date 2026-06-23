@@ -6,6 +6,18 @@
 
 - Java 17, Maven
 - PostgreSQL
+- **React** — `frontend/` (ветка `react`)
+- **Angular 19** — `angular-app/` (ветка `angular`)
+
+### Angular-фронтенд
+
+```bash
+cd angular-app
+npm install
+npm start
+```
+
+→ http://localhost:4200 (прокси API на `:8080`)
 
 ## SonarCloud
 
