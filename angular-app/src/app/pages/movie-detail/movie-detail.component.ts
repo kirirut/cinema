@@ -253,16 +253,19 @@ export class MovieDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.loadMovie();
+  }
+
+  private async loadMovie(): Promise<void> {
+    await this.auth.ensureSession();
     const id = +this.route.snapshot.paramMap.get('id')!;
+    const loggedIn = this.auth.isLoggedIn();
+
     forkJoin({
       movie: this.movies.getById(id),
       reviews: this.movies.getReviews(id),
-      rating: this.auth.isLoggedIn()
-        ? this.movies.getMyRating(id).pipe(catchError(() => of(null)))
-        : of(null),
-      favs: this.auth.isLoggedIn()
-        ? this.movies.getFavorites().pipe(catchError(() => of([])))
-        : of([]),
+      rating: loggedIn ? this.movies.getMyRating(id) : of(null),
+      favs: loggedIn ? this.movies.getFavorites().pipe(catchError(() => of([]))) : of([]),
     }).subscribe({
       next: ({ movie, reviews, rating, favs }) => {
         this.movie.set(movie);
@@ -297,9 +300,20 @@ export class MovieDetailComponent implements OnInit {
   rate(score: number): void {
     const m = this.movie();
     if (!m) return;
-    this.movies.rate(m.id, score).subscribe((r) => {
-      this.myRating.set(r.score);
-      this.movies.getById(m.id).subscribe((updated) => this.movie.set(updated));
+    if (!this.auth.isLoggedIn()) {
+      void this.router.navigate(['/login'], { queryParams: { return: `/movie/${m.id}` } });
+      return;
+    }
+    this.movies.rate(m.id, score).subscribe({
+      next: (r) => {
+        this.myRating.set(r.score);
+        this.movies.getById(m.id).subscribe((updated) => this.movie.set(updated));
+      },
+      error: (err) => {
+        if (err.status !== 401 && err.status !== 403) {
+          console.error('Не удалось сохранить оценку', err);
+        }
+      },
     });
   }
 

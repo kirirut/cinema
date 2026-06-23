@@ -13,7 +13,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(cloned).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status === 401 && !req.url.includes('/api/auth/')) {
+      const hadToken = !!token;
+      const isAuthEndpoint = req.url.includes('/api/auth/');
+      const isOptionalRead =
+        req.method === 'GET' && req.url.includes('/ratings/me');
+
+      if (
+        hadToken &&
+        !isAuthEndpoint &&
+        !isOptionalRead &&
+        (err.status === 401 || err.status === 403)
+      ) {
         auth.logout();
       }
       return throwError(() => err);

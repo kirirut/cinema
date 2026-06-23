@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { catchError, Observable, of, throwError } from 'rxjs';
 import {
   Catalog,
   Favorite,
@@ -51,7 +51,12 @@ export class MoviesService {
   }
 
   getMyRating(movieId: number): Observable<Rating | null> {
-    return this.http.get<Rating>(`/api/movies/${movieId}/ratings/me`);
+    return this.http.get<Rating>(`/api/movies/${movieId}/ratings/me`).pipe(
+      catchError((err: HttpErrorResponse) => {
+        if (err.status === 404) return of(null);
+        return throwError(() => err);
+      }),
+    );
   }
 
   rate(movieId: number, score: number): Observable<Rating> {

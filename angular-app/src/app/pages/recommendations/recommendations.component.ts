@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MovieRowComponent } from '../../shared/components/movie-row/movie-row.component';
 import { MoviesService } from '../../core/services/movies.service';
 import { MovieSummary } from '../../core/models';
@@ -62,8 +63,12 @@ export class RecommendationsComponent implements OnInit {
         this.movies.set(m);
         this.loading.set(false);
       },
-      error: (err) => {
-        this.error.set(err.error?.detail ?? 'Не удалось загрузить рекомендации');
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 401 || err.status === 403) {
+          this.error.set('Сессия истекла — войдите снова');
+        } else {
+          this.error.set(err.error?.detail ?? 'Не удалось загрузить рекомендации');
+        }
         this.loading.set(false);
       },
     });
