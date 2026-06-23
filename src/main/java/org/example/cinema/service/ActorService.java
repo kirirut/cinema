@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ActorService {
 
+    private static final String ACTOR_NOT_FOUND = "Actor not found: ";
+
     private final ActorRepository actorRepository;
 
     public ActorService(ActorRepository actorRepository) {
@@ -33,7 +35,7 @@ public class ActorService {
     public ActorResponse findById(Long id) {
         return actorRepository.findById(id)
                 .map(EntityMapper::toActorResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Actor not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACTOR_NOT_FOUND + id));
     }
 
     @Transactional
@@ -44,21 +46,21 @@ public class ActorService {
     @Transactional
     public ActorResponse update(Long id, ActorRequest request) {
         Actor actor = actorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Actor not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACTOR_NOT_FOUND + id));
         return EntityMapper.toActorResponse(actorRepository.save(mapRequest(actor, request)));
     }
 
     @Transactional
     public void delete(Long id) {
         if (!actorRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Actor not found: " + id);
+            throw new ResourceNotFoundException(ACTOR_NOT_FOUND + id);
         }
         actorRepository.deleteById(id);
     }
 
     public Actor getEntity(Long id) {
         return actorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Actor not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ACTOR_NOT_FOUND + id));
     }
 
     private Actor mapRequest(Actor actor, ActorRequest request) {

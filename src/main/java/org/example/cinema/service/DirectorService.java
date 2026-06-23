@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DirectorService {
 
+    private static final String DIRECTOR_NOT_FOUND = "Director not found: ";
+
     private final DirectorRepository directorRepository;
 
     public DirectorService(DirectorRepository directorRepository) {
@@ -33,7 +35,7 @@ public class DirectorService {
     public DirectorResponse findById(Long id) {
         return directorRepository.findById(id)
                 .map(EntityMapper::toDirectorResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Director not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(DIRECTOR_NOT_FOUND + id));
     }
 
     @Transactional
@@ -44,21 +46,21 @@ public class DirectorService {
     @Transactional
     public DirectorResponse update(Long id, DirectorRequest request) {
         Director director = directorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Director not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(DIRECTOR_NOT_FOUND + id));
         return EntityMapper.toDirectorResponse(directorRepository.save(mapRequest(director, request)));
     }
 
     @Transactional
     public void delete(Long id) {
         if (!directorRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Director not found: " + id);
+            throw new ResourceNotFoundException(DIRECTOR_NOT_FOUND + id);
         }
         directorRepository.deleteById(id);
     }
 
     public Director getEntity(Long id) {
         return directorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Director not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(DIRECTOR_NOT_FOUND + id));
     }
 
     private Director mapRequest(Director director, DirectorRequest request) {

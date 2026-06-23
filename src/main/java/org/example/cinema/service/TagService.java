@@ -17,6 +17,8 @@ import java.util.List;
 @Service
 public class TagService {
 
+    private static final String TAG_NOT_FOUND = "Tag not found: ";
+
     private final TagRepository tagRepository;
 
     public TagService(TagRepository tagRepository) {
@@ -34,7 +36,7 @@ public class TagService {
     public TagResponse findById(Long id) {
         return tagRepository.findById(id)
                 .map(EntityMapper::toTagResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(TAG_NOT_FOUND + id));
     }
 
     @Transactional
@@ -52,7 +54,7 @@ public class TagService {
     @CacheEvict(value = {"tags", "tag"}, allEntries = true)
     public TagResponse update(Long id, TagRequest request) {
         Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(TAG_NOT_FOUND + id));
         tag.setName(request.name());
         return EntityMapper.toTagResponse(tagRepository.save(tag));
     }
@@ -61,13 +63,13 @@ public class TagService {
     @CacheEvict(value = {"tags", "tag"}, allEntries = true)
     public void delete(Long id) {
         if (!tagRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Tag not found: " + id);
+            throw new ResourceNotFoundException(TAG_NOT_FOUND + id);
         }
         tagRepository.deleteById(id);
     }
 
     public Tag getEntity(Long id) {
         return tagRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(TAG_NOT_FOUND + id));
     }
 }

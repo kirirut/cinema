@@ -17,6 +17,8 @@ import java.util.List;
 @Service
 public class CountryService {
 
+    private static final String COUNTRY_NOT_FOUND = "Country not found: ";
+
     private final CountryRepository countryRepository;
 
     public CountryService(CountryRepository countryRepository) {
@@ -34,7 +36,7 @@ public class CountryService {
     public CountryResponse findById(Long id) {
         return countryRepository.findById(id)
                 .map(EntityMapper::toCountryResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Country not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COUNTRY_NOT_FOUND + id));
     }
 
     @Transactional
@@ -56,7 +58,7 @@ public class CountryService {
     @CacheEvict(value = {"countries", "country"}, allEntries = true)
     public CountryResponse update(Long id, CountryRequest request) {
         Country country = countryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Country not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COUNTRY_NOT_FOUND + id));
         country.setName(request.name());
         country.setIsoCode(request.isoCode().toUpperCase());
         return EntityMapper.toCountryResponse(countryRepository.save(country));
@@ -66,13 +68,13 @@ public class CountryService {
     @CacheEvict(value = {"countries", "country"}, allEntries = true)
     public void delete(Long id) {
         if (!countryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Country not found: " + id);
+            throw new ResourceNotFoundException(COUNTRY_NOT_FOUND + id);
         }
         countryRepository.deleteById(id);
     }
 
     public Country getEntity(Long id) {
         return countryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Country not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COUNTRY_NOT_FOUND + id));
     }
 }

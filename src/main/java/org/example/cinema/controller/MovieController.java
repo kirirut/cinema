@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.example.cinema.dto.MovieDetailResponse;
 import org.example.cinema.dto.MovieRequest;
+import org.example.cinema.dto.MovieSearchCriteria;
 import org.example.cinema.dto.MovieSummaryResponse;
 import org.example.cinema.dto.PageResponse;
 import org.example.cinema.service.MovieService;
@@ -47,7 +48,10 @@ public class MovieController {
             @RequestParam(required = false) Short yearTo,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return movieService.search(q, genreId, countryId, tagId, directorId, actorId, yearFrom, yearTo, pageable);
+        return movieService.search(
+                new MovieSearchCriteria(q, genreId, countryId, tagId, directorId, actorId, yearFrom, yearTo),
+                pageable
+        );
     }
 
     @GetMapping("/{id}")

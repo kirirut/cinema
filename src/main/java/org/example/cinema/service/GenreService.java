@@ -17,6 +17,8 @@ import java.util.List;
 @Service
 public class GenreService {
 
+    private static final String GENRE_NOT_FOUND = "Genre not found: ";
+
     private final GenreRepository genreRepository;
 
     public GenreService(GenreRepository genreRepository) {
@@ -34,7 +36,7 @@ public class GenreService {
     public GenreResponse findById(Long id) {
         return genreRepository.findById(id)
                 .map(EntityMapper::toGenreResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Genre not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(GENRE_NOT_FOUND + id));
     }
 
     @Transactional
@@ -53,7 +55,7 @@ public class GenreService {
     @CacheEvict(value = {"genres", "genre"}, allEntries = true)
     public GenreResponse update(Long id, GenreRequest request) {
         Genre genre = genreRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Genre not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(GENRE_NOT_FOUND + id));
         genre.setName(request.name());
         genre.setSlug(request.slug());
         return EntityMapper.toGenreResponse(genreRepository.save(genre));
@@ -63,13 +65,13 @@ public class GenreService {
     @CacheEvict(value = {"genres", "genre"}, allEntries = true)
     public void delete(Long id) {
         if (!genreRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Genre not found: " + id);
+            throw new ResourceNotFoundException(GENRE_NOT_FOUND + id);
         }
         genreRepository.deleteById(id);
     }
 
     public Genre getEntity(Long id) {
         return genreRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Genre not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(GENRE_NOT_FOUND + id));
     }
 }

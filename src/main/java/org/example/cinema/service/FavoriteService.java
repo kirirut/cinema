@@ -10,6 +10,7 @@ import org.example.cinema.exception.ConflictException;
 import org.example.cinema.exception.ResourceNotFoundException;
 import org.example.cinema.mapper.EntityMapper;
 import org.example.cinema.repository.FavoriteRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,7 +70,7 @@ public class FavoriteService {
 
     private FavoriteResponse toFavoriteResponse(Favorite favorite) {
         Movie movie = favorite.getMovie();
-        movie.getGenres().size();
+        Hibernate.initialize(movie.getGenres());
         MovieSummaryResponse movieResponse = EntityMapper.toMovieSummaryResponse(movie);
         return new FavoriteResponse(
                 favorite.getUser().getId(),
