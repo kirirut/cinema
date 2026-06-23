@@ -16,6 +16,18 @@ npm start
 
 API проксируется на `:8080` через `proxy.conf.json`.
 
+### Тестовые данные
+
+Из корня репозитория (нужен PostgreSQL и `.env`):
+
+```bash
+cd scripts
+npm install
+npm run seed
+```
+
+Добавляет ~40 фильмов, актёров и режиссёров через [faker](https://fakerjs.dev/).
+
 ## Страницы
 
 | Путь | Описание |

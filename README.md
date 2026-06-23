@@ -19,6 +19,18 @@ npm start
 
 → http://localhost:4200 (прокси API на `:8080`)
 
+### Тестовые данные (faker)
+
+При запущенном PostgreSQL (контейнер `cinema-postgres` или локально) и файле `.env` в корне проекта:
+
+```bash
+cd scripts
+npm install
+npm run seed
+```
+
+Скрипт добавляет режиссёров, актёров и ~40 фильмов со случайными данными. Параметры: `SEED_MOVIES`, `SEED_DIRECTORS`, `SEED_ACTORS`, `POSTGRES_HOST_PORT`.
+
 ## SonarCloud
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kirirut_cinema&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=kirirut_cinema)
