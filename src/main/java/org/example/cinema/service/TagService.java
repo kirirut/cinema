@@ -68,6 +68,10 @@ public class TagService {
         tagRepository.deleteById(id);
     }
 
+    public Tag getEntity(long id) {
+        return getEntity(Long.valueOf(id));
+    }
+
     public Tag getEntity(Long id) {
         return tagRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TAG_NOT_FOUND + id));

@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.LongFunction;
 
 @Service
 public class MovieService {
@@ -168,7 +168,7 @@ public class MovieService {
         return movie;
     }
 
-    private <T> Set<T> resolveIds(Set<Long> ids, Function<Long, T> loader) {
+    private <T> Set<T> resolveIds(Set<Long> ids, LongFunction<T> loader) {
         if (ids == null || ids.isEmpty()) {
             return new HashSet<>();
         }

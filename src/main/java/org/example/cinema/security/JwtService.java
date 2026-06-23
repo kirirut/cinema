@@ -16,7 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
 
-@SuppressWarnings("java:S2143")
 @Service
 public class JwtService {
 

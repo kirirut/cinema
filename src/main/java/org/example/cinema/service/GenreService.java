@@ -70,6 +70,10 @@ public class GenreService {
         genreRepository.deleteById(id);
     }
 
+    public Genre getEntity(long id) {
+        return getEntity(Long.valueOf(id));
+    }
+
     public Genre getEntity(Long id) {
         return genreRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(GENRE_NOT_FOUND + id));

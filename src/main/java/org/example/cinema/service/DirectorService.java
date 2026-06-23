@@ -58,6 +58,10 @@ public class DirectorService {
         directorRepository.deleteById(id);
     }
 
+    public Director getEntity(long id) {
+        return getEntity(Long.valueOf(id));
+    }
+
     public Director getEntity(Long id) {
         return directorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DIRECTOR_NOT_FOUND + id));

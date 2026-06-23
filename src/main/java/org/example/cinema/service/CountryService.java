@@ -73,6 +73,10 @@ public class CountryService {
         countryRepository.deleteById(id);
     }
 
+    public Country getEntity(long id) {
+        return getEntity(Long.valueOf(id));
+    }
+
     public Country getEntity(Long id) {
         return countryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(COUNTRY_NOT_FOUND + id));
