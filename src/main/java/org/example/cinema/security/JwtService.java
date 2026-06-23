@@ -14,7 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Date;
 
 @Service
 public class JwtService {
@@ -35,8 +34,8 @@ public class JwtService {
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("uid", user.getId())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(expiresAt))
+                .issuedAt(now)
+                .expiration(expiresAt)
                 .signWith(secretKey)
                 .compact();
     }
@@ -46,10 +45,10 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
         Claims claims = parseClaims(token);
-        return username.equals(userDetails.getUsername())
-                && claims.getExpiration().toInstant().isAfter(Instant.now());
+        String username = claims.getSubject();
+        Instant expiration = Instant.ofEpochSecond(claims.get("exp", Number.class).longValue());
+        return username.equals(userDetails.getUsername()) && expiration.isAfter(Instant.now());
     }
 
     private Claims parseClaims(String token) {

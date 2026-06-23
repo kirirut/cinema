@@ -6,8 +6,12 @@ import org.example.cinema.dto.MovieRequest;
 import org.example.cinema.dto.MovieSearchCriteria;
 import org.example.cinema.dto.MovieSummaryResponse;
 import org.example.cinema.dto.PageResponse;
+import org.example.cinema.entity.Country;
+import org.example.cinema.entity.Director;
+import org.example.cinema.entity.Genre;
 import org.example.cinema.entity.Movie;
 import org.example.cinema.entity.MovieActor;
+import org.example.cinema.entity.Tag;
 import org.example.cinema.exception.ResourceNotFoundException;
 import org.example.cinema.mapper.EntityMapper;
 import org.example.cinema.repository.MovieRepository;
@@ -160,10 +164,10 @@ public class MovieService {
         movie.setPosterUrl(request.posterUrl());
         movie.setTrailerUrl(request.trailerUrl());
         movie.setAgeRating(request.ageRating());
-        movie.setGenres(resolveIds(request.genreIds(), id -> genreService.getEntity(id)));
-        movie.setCountries(resolveIds(request.countryIds(), id -> countryService.getEntity(id)));
-        movie.setDirectors(resolveIds(request.directorIds(), id -> directorService.getEntity(id)));
-        movie.setTags(resolveIds(request.tagIds(), id -> tagService.getEntity(id)));
+        movie.setGenres(resolveIds(request.genreIds(), this::loadGenre));
+        movie.setCountries(resolveIds(request.countryIds(), this::loadCountry));
+        movie.setDirectors(resolveIds(request.directorIds(), this::loadDirector));
+        movie.setTags(resolveIds(request.tagIds(), this::loadTag));
         updateCast(movie, request.cast());
         return movie;
     }
@@ -177,6 +181,22 @@ public class MovieService {
             result.add(loader.apply(id));
         }
         return result;
+    }
+
+    private Genre loadGenre(long id) {
+        return genreService.getEntity(id);
+    }
+
+    private Country loadCountry(long id) {
+        return countryService.getEntity(id);
+    }
+
+    private Director loadDirector(long id) {
+        return directorService.getEntity(id);
+    }
+
+    private Tag loadTag(long id) {
+        return tagService.getEntity(id);
     }
 
     private void updateCast(Movie movie, List<MovieCastRequest> castRequests) {
