@@ -14,7 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Date;
 
+@SuppressWarnings("java:S2143")
 @Service
 public class JwtService {
 
@@ -34,8 +36,8 @@ public class JwtService {
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("uid", user.getId())
-                .issuedAt(now)
-                .expiration(expiresAt)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
                 .signWith(secretKey)
                 .compact();
     }

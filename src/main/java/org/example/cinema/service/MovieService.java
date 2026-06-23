@@ -6,12 +6,8 @@ import org.example.cinema.dto.MovieRequest;
 import org.example.cinema.dto.MovieSearchCriteria;
 import org.example.cinema.dto.MovieSummaryResponse;
 import org.example.cinema.dto.PageResponse;
-import org.example.cinema.entity.Country;
-import org.example.cinema.entity.Director;
-import org.example.cinema.entity.Genre;
 import org.example.cinema.entity.Movie;
 import org.example.cinema.entity.MovieActor;
-import org.example.cinema.entity.Tag;
 import org.example.cinema.exception.ResourceNotFoundException;
 import org.example.cinema.mapper.EntityMapper;
 import org.example.cinema.repository.MovieRepository;
@@ -27,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.LongFunction;
+import java.util.function.Function;
 
 @Service
 public class MovieService {
@@ -164,15 +160,15 @@ public class MovieService {
         movie.setPosterUrl(request.posterUrl());
         movie.setTrailerUrl(request.trailerUrl());
         movie.setAgeRating(request.ageRating());
-        movie.setGenres(resolveIds(request.genreIds(), this::loadGenre));
-        movie.setCountries(resolveIds(request.countryIds(), this::loadCountry));
-        movie.setDirectors(resolveIds(request.directorIds(), this::loadDirector));
-        movie.setTags(resolveIds(request.tagIds(), this::loadTag));
+        movie.setGenres(resolveIds(request.genreIds(), genreService::getEntity));
+        movie.setCountries(resolveIds(request.countryIds(), countryService::getEntity));
+        movie.setDirectors(resolveIds(request.directorIds(), directorService::getEntity));
+        movie.setTags(resolveIds(request.tagIds(), tagService::getEntity));
         updateCast(movie, request.cast());
         return movie;
     }
 
-    private <T> Set<T> resolveIds(Set<Long> ids, LongFunction<T> loader) {
+    private <T> Set<T> resolveIds(Set<Long> ids, Function<Long, T> loader) {
         if (ids == null || ids.isEmpty()) {
             return new HashSet<>();
         }
@@ -181,22 +177,6 @@ public class MovieService {
             result.add(loader.apply(id));
         }
         return result;
-    }
-
-    private Genre loadGenre(long id) {
-        return genreService.getEntity(id);
-    }
-
-    private Country loadCountry(long id) {
-        return countryService.getEntity(id);
-    }
-
-    private Director loadDirector(long id) {
-        return directorService.getEntity(id);
-    }
-
-    private Tag loadTag(long id) {
-        return tagService.getEntity(id);
     }
 
     private void updateCast(Movie movie, List<MovieCastRequest> castRequests) {
